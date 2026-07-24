@@ -22,6 +22,12 @@ public class VideoStatusListener {
         this.notificationService = notificationService;
     }
 
+    @RabbitListener(queues = "${app.rabbitmq.queue-processing}")
+    public void handleProcessing(VideoProcessingEvent event) {
+        log.info("Job {} em processamento", event.jobId());
+        videoJobService.markProcessing(event.jobId());
+    }
+
     @RabbitListener(queues = "${app.rabbitmq.queue-completed}")
     public void handleCompleted(VideoCompletedEvent event) {
         log.info("Job {} concluído", event.jobId());

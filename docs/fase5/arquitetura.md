@@ -34,7 +34,7 @@ flowchart LR
 | Comunicação assíncrona | RabbitMQ topic exchange | Absorve picos sem perder requisições |
 | Autenticação inicial | HTTP Basic Auth | Atende requisito de usuário/senha; evoluir para JWT |
 | Persistência | PostgreSQL + Liquibase | Rastreabilidade de jobs e status |
-| Cache | Redis | Sessões e rate limiting futuro |
+| Cache | Redis | Cache de listagem de jobs por usuário (`@Cacheable`, TTL 5 min) |
 | Processamento | Worker dedicado | Escala horizontal independente da API |
 | Containers | Docker Compose local | Preparado para K8s na entrega final |
 
@@ -56,6 +56,7 @@ flowchart LR
 | Exchange | Routing Key | Produtor | Consumidor |
 |----------|-------------|----------|------------|
 | fiapx.events | video.requested | API | Processor |
+| fiapx.events | video.processing | Processor | API |
 | fiapx.events | video.completed | Processor | API |
 | fiapx.events | video.failed | Processor | API |
 
@@ -68,7 +69,7 @@ flowchart LR
 ## Monitoramento
 
 - `/actuator/prometheus` em ambos os serviços
-- Dashboards Grafana para throughput, latência e fila
+- Dashboard **FIAP X — Visão geral** provisionado em Grafana (HTTP, latência p95, disponibilidade)
 
 ## Projeto base
 

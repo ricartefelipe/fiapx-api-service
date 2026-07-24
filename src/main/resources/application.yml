@@ -50,6 +50,16 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
 app:
   security:
     default-user: ${APP_USER:fiapx}
@@ -57,8 +67,10 @@ app:
   rabbitmq:
     exchange: fiapx.events
     routing-key-video-requested: video.requested
+    routing-key-video-processing: video.processing
     routing-key-video-completed: video.completed
     routing-key-video-failed: video.failed
+    queue-processing: video.api.processing
     queue-completed: video.api.completed
     queue-failed: video.api.failed
   storage:

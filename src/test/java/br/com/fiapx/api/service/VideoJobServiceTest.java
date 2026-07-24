@@ -74,6 +74,17 @@ class VideoJobServiceTest {
     }
 
     @Test
+    void markProcessingShouldUpdateStatus() {
+        UUID jobId = UUID.randomUUID();
+        VideoJob job = new VideoJob(jobId, UUID.randomUUID(), "video.mp4", VideoJobStatus.QUEUED, java.time.Instant.now());
+        when(videoJobRepository.findById(jobId)).thenReturn(Optional.of(job));
+
+        VideoJob updated = videoJobService.markProcessing(jobId);
+
+        assertThat(updated.getStatus()).isEqualTo(VideoJobStatus.PROCESSING);
+    }
+
+    @Test
     void markFailedShouldNotifyUser() {
         UUID jobId = UUID.randomUUID();
         VideoJob job = new VideoJob(jobId, UUID.randomUUID(), "video.mp4", VideoJobStatus.PROCESSING, java.time.Instant.now());
