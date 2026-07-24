@@ -20,6 +20,10 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASS:guest}
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
 
 server:
   port: 8080
@@ -53,5 +57,10 @@ app:
   rabbitmq:
     exchange: fiapx.events
     routing-key-video-requested: video.requested
+    routing-key-video-completed: video.completed
+    routing-key-video-failed: video.failed
+    queue-completed: video.api.completed
+    queue-failed: video.api.failed
   storage:
     upload-dir: ${UPLOAD_DIR:/tmp/fiapx/uploads}
+    output-dir: ${OUTPUT_DIR:/tmp/fiapx/output}

@@ -18,6 +18,13 @@ spring:
     enabled: false
 
 app:
-  security:
-    default-user: test
-    default-password: test
+  rabbitmq:
+    exchange: fiapx.events
+    routing-key-video-requested: video.requested
+    routing-key-video-completed: video.completed
+    routing-key-video-failed: video.failed
+    queue-completed: video.api.completed
+    queue-failed: video.api.failed
+  storage:
+    upload-dir: ${java.io.tmpdir}/fiapx-test/uploads
+    output-dir: ${java.io.tmpdir}/fiapx-test/output
