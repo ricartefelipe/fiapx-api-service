@@ -32,6 +32,7 @@ docker compose ps
 | Redis              | localhost:6379                       |
 | Prometheus         | localhost:9090                       |
 | Grafana            | localhost:3000 (admin/admin)         |
+| MailHog            | localhost:8025 (UI) / 1025 (SMTP)    |
 
 Credenciais da API: `fiapx` / `fiapx123`
 
@@ -105,7 +106,7 @@ cd fiapx-processor-service
 
 1. API recebe upload, persiste job `QUEUED` e publica `video.requested`
 2. Processor consome, extrai frames com FFmpeg, gera ZIP e publica `video.completed` ou `video.failed`
-3. API atualiza status e registra notificação de erro via log
+3. API atualiza status (`PROCESSING`, `COMPLETED`, `FAILED`) e notifica falha via log + e-mail (MailHog)
 
 ## Testes unitários e integração
 

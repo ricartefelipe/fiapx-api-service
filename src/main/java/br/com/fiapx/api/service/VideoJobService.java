@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,7 @@ public class VideoJobService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "videoJobs", key = "#userId")
     public VideoJob createJob(UUID userId, MultipartFile file) {
         validateFile(file);
         UUID jobId = UUID.randomUUID();
@@ -59,6 +62,7 @@ public class VideoJobService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "videoJobs", key = "#userId")
     public List<VideoJob> listJobs(UUID userId) {
         return videoJobRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
@@ -86,18 +90,31 @@ public class VideoJobService {
     }
 
     @Transactional
-    public void markCompleted(UUID jobId, String outputPath) {
+    @CacheEvict(cacheNames = "videoJobs", key = "#result.userId")
+    public VideoJob markProcessing(UUID jobId) {
         VideoJob job = videoJobRepository.findById(jobId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job não encontrado"));
-        job.markCompleted(outputPath, Instant.now());
+        job.markProcessing(Instant.now());
+        return job;
     }
 
     @Transactional
-    public void markFailed(UUID jobId, String errorMessage, NotificationService notificationService) {
+    @CacheEvict(cacheNames = "videoJobs", key = "#result.userId")
+    public VideoJob markCompleted(UUID jobId, String outputPath) {
+        VideoJob job = videoJobRepository.findById(jobId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job não encontrado"));
+        job.markCompleted(outputPath, Instant.now());
+        return job;
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "videoJobs", key = "#result.userId")
+    public VideoJob markFailed(UUID jobId, String errorMessage, NotificationService notificationService) {
         VideoJob job = videoJobRepository.findById(jobId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job não encontrado"));
         job.markFailed(errorMessage, Instant.now());
         notificationService.notifyProcessingFailed(job.getId(), job.getUserId(), errorMessage);
+        return job;
     }
 
     private void validateFile(MultipartFile file) {

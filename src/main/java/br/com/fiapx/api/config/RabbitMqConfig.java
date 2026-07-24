@@ -21,6 +21,11 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    Queue videoProcessingQueue(RabbitMqProperties properties) {
+        return QueueBuilder.durable(properties.queueProcessing()).build();
+    }
+
+    @Bean
     Queue videoCompletedQueue(RabbitMqProperties properties) {
         return QueueBuilder.durable(properties.queueCompleted()).build();
     }
@@ -28,6 +33,14 @@ public class RabbitMqConfig {
     @Bean
     Queue videoFailedQueue(RabbitMqProperties properties) {
         return QueueBuilder.durable(properties.queueFailed()).build();
+    }
+
+    @Bean
+    Binding videoProcessingBinding(Queue videoProcessingQueue, TopicExchange fiapxEventsExchange, RabbitMqProperties properties) {
+        return BindingBuilder
+            .bind(videoProcessingQueue)
+            .to(fiapxEventsExchange)
+            .with(properties.routingKeyVideoProcessing());
     }
 
     @Bean
