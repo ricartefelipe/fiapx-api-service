@@ -2,9 +2,11 @@ package br.com.fiapx.api.messaging;
 
 import br.com.fiapx.api.config.RabbitMqProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("!test")
 public class VideoEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;

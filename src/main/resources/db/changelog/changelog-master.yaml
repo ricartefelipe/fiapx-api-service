@@ -86,3 +86,25 @@ databaseChangeLog:
             referencedTableName: users
             referencedColumnNames: id
             constraintName: fk_video_jobs_user
+  - changeSet:
+      id: 003-seed-demo-user
+      author: fiapx
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  value: 00000000-0000-0000-0000-000000000001
+              - column:
+                  name: username
+                  value: fiapx
+              - column:
+                  name: password_hash
+                  value: $2b$10$qP8Eyf3sNatIGYSXxexPcuHx4JqL4lfqEND2FT752gmxG5PE2n0mi
+              - column:
+                  name: email
+                  value: fiapx@fiapx.local
+              - column:
+                  name: created_at
+                  valueComputed: CURRENT_TIMESTAMP
