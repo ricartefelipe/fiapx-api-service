@@ -13,7 +13,7 @@
 | 2 | https://github.com/ricartefelipe/fiapx-processor-service | Worker assíncrono — extração de frames com FFmpeg e geração do ZIP | 8081 |
 
 **Branches:** `main` (estável, CI verde), `develop` (integração).  
-**Acesso ao avaliador SOAT:** usuário **`soat-architecture`** convidado com leitura nos dois repositórios.
+**Acesso ao avaliador SOAT:** usuário **`soat-architecture`** com leitura nos dois repositórios.
 
 **Documentação técnica no repositório central:**  
 https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5  
@@ -116,8 +116,8 @@ Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz
 
 | Serviço | Cobertura de instruções | Testes |
 |---|---|---|
-| fiapx-api-service | **60,0%** | Unitários (controller, service, security) + `@SpringBootTest` — **8 testes** |
-| fiapx-processor-service | **53,8%** | Unitários (listener, ZIP, processing) + `@SpringBootTest` — **4 testes** |
+| fiapx-api-service | **53,6%** | Unitários (controller, service, security) + `@SpringBootTest` — **8 testes** |
+| fiapx-processor-service | **56,2%** | Unitários (listener, ZIP, processing) + `@SpringBootTest` — **4 testes** |
 
 > Cobertura medida com `./mvnw -Pci clean verify`. Camadas de integração (RabbitMQ listeners, FFmpeg real) concentram código ainda não coberto por testes unitários.
 

@@ -41,7 +41,7 @@ Legenda de status:
 | RT-01 | Persistir os dados | Conforme | PostgreSQL + JPA + Liquibase (`src/main/resources/db/changelog/changelog-master.yaml`) | Tabelas `users`, `video_jobs` |
 | RT-02 | Arquitetura escalável | Conforme | API stateless; processor horizontal via fila; documentação em `arquitetura.md` § Escalabilidade | Docker Compose local; K8s não exigido |
 | RT-03 | Versionado no GitHub | Conforme | https://github.com/ricartefelipe/fiapx-api-service e https://github.com/ricartefelipe/fiapx-processor-service | GitFlow documentado |
-| RT-04 | Testes que garantam qualidade | Conforme | `./mvnw -Pci clean verify` — 8 testes API, 4 testes Processor (sessão 24/07/2026) | JaCoCo ~60% API, ~54% Processor |
+| RT-04 | Testes que garantam qualidade | Conforme | `./mvnw -Pci clean verify` — 8 testes API, 4 testes Processor (sessão 24/07/2026) | JaCoCo ~54% API, ~56% Processor |
 | RT-05 | CI/CD da aplicação | Conforme | `.github/workflows/ci.yml` — build, testes, push GHCR | `enforce-gitflow.yml` bloqueia PR feature→main |
 
 ---
@@ -101,4 +101,4 @@ Legenda de status:
 
 ---
 
-*Última revisão: 24/07/2026 — branch `feature/fase5-conformidade-pdf`*
+*Última revisão: 24/07/2026 — branch `main`*
