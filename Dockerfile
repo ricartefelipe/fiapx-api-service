@@ -4,9 +4,10 @@ COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
 RUN ./mvnw dependency:go-offline -q
 COPY src ./src
-RUN ./mvnw -Pci clean package -DskipTests -q
+RUN ./mvnw clean package -DskipTests -q
 
 FROM eclipse-temurin:21-jre-alpine
+RUN apk add --no-cache curl
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080

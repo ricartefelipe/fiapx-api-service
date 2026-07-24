@@ -34,21 +34,28 @@ Hackathon SOAT — Fase 5 | FIAP X | Microsserviço 1 de 2
 
 ## Como rodar localmente
 
-### 1. Subir a infraestrutura
+### Stack completa (recomendado)
+
+Requer o repositório `fiapx-processor-service` no mesmo diretório pai:
+
+```bash
+docker compose up -d --build
+```
+
+Swagger UI: `http://localhost:8080/api/swagger-ui.html`
+
+Credenciais: `fiapx` / `fiapx123`
+
+Teste E2E: `./scripts/e2e-test.sh`
+
+Documentação detalhada: `docs/fase5/como-rodar-localmente.md`
+
+### Apenas infraestrutura + app no host
 
 ```bash
 docker compose -f docker-compose.infra.yml up -d
-```
-
-### 2. Subir o serviço
-
-```bash
 ./mvnw spring-boot:run
 ```
-
-O serviço sobe na porta **8080** com context-path `/api`.
-
-Swagger UI: `http://localhost:8080/api/swagger-ui.html`
 
 ---
 
