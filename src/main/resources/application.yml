@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: fiapx-api-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fiapx_api}
+    username: ${DB_USER:fiapx}
+    password: ${DB_PASS:fiapx}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  liquibase:
+    change-log: classpath:db/changelog/changelog-master.yaml
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  security:
+    default-user: ${APP_USER:fiapx}
+    default-password: ${APP_PASSWORD:fiapx123}
+  rabbitmq:
+    exchange: fiapx.events
+    routing-key-video-requested: video.requested
+  storage:
+    upload-dir: ${UPLOAD_DIR:/tmp/fiapx/uploads}
