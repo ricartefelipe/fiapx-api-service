@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Build e testes
+        run: ./mvnw -B -Pci clean verify
+
+      - name: Upload cobertura JaCoCo
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
+      - name: Build e push Docker
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          IMAGE_SHA: ${{ github.sha }}
+        run: |
+          echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker build -t ghcr.io/ricartefelipe/fiapx-api-service:latest \
+                       -t ghcr.io/ricartefelipe/fiapx-api-service:${IMAGE_SHA} .
+          docker push ghcr.io/ricartefelipe/fiapx-api-service:latest
+          docker push ghcr.io/ricartefelipe/fiapx-api-service:${IMAGE_SHA}
