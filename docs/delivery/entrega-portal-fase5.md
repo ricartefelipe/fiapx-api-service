@@ -91,6 +91,8 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 
 ## 4. Requisitos do hackathon — checklist
 
+Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz-conformidade.md`](../fase5/matriz-conformidade.md)
+
 | Requisito | Status | Evidência |
 |---|---|---|
 | Processar mais de um vídeo simultaneamente | ✅ | Fila RabbitMQ + worker assíncrono; múltiplos jobs em paralelo |
