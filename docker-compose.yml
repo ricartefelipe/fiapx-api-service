@@ -39,6 +39,12 @@ services:
       timeout: 5s
       retries: 5
 
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   api-service:
     build:
       context: .
@@ -51,6 +57,8 @@ services:
       DB_PASS: fiapx
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: guest
@@ -118,6 +126,9 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./monitoring/grafana/provisioning/dashboards/json:/etc/grafana/provisioning/dashboards/json:ro
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
 

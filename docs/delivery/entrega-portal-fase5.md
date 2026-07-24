@@ -53,16 +53,17 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 | 1 | Cliente | `POST /api/videos` (multipart) com HTTP Basic Auth |
 | 2 | API Service | Persiste `VideoJob` (status `QUEUED`), salva arquivo e publica `video.requested` |
 | 3 | RabbitMQ | Entrega mensagem na fila `video.processing` |
-| 4 | Processor Service | Consome evento, extrai frames com FFmpeg, gera ZIP no volume compartilhado |
+| 4 | Processor Service | Publica `video.processing`, extrai frames com FFmpeg, gera ZIP no volume compartilhado |
 | 5 | Processor Service | Publica `video.completed` ou `video.failed` |
-| 6 | API Service | Atualiza status do job; em erro, registra notificação via log |
-| 7 | Cliente | `GET /api/videos/{id}` para acompanhar status; `GET /api/videos/{id}/download` quando `COMPLETED` |
+| 6 | API Service | Atualiza status do job; em erro, notifica via log e e-mail (MailHog) |
+| 7 | Cliente | `GET /api/videos` e `GET /api/videos/{id}`; download do ZIP quando `COMPLETED` |
 
 ### 2.3 Eventos RabbitMQ
 
 | Exchange | Routing Key | Produtor | Consumidor |
 |----------|-------------|----------|------------|
 | fiapx.events | video.requested | API | Processor |
+| fiapx.events | video.processing | Processor | API |
 | fiapx.events | video.completed | Processor | API |
 | fiapx.events | video.failed | Processor | API |
 
@@ -77,7 +78,7 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 | API REST | Spring Web + Spring Security (HTTP Basic Auth) |
 | Mensageria | RabbitMQ + Spring AMQP |
 | Banco relacional | PostgreSQL + Liquibase |
-| Cache | Redis |
+| Cache | Redis (listagem de jobs por usuário, TTL 5 min) |
 | Processamento de vídeo | FFmpeg (via ProcessBuilder no processor) |
 | Documentação API | SpringDoc OpenAPI / Swagger UI |
 | Testes | JUnit 5 + Mockito + Testcontainers |
@@ -90,13 +91,15 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 
 ## 4. Requisitos do hackathon — checklist
 
+Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz-conformidade.md`](../fase5/matriz-conformidade.md)
+
 | Requisito | Status | Evidência |
 |---|---|---|
 | Processar mais de um vídeo simultaneamente | ✅ | Fila RabbitMQ + worker assíncrono; múltiplos jobs em paralelo |
 | Não perder requisições em picos de carga | ✅ | Filas duráveis no RabbitMQ; API retorna 202 Accepted |
 | Proteção por usuário e senha | ✅ | HTTP Basic Auth (`fiapx` / `fiapx123` demo) |
 | Listagem de status dos vídeos por usuário | ✅ | `GET /api/videos` e `GET /api/videos/{id}` |
-| Notificação em caso de erro | ✅ | `LogNotificationService` + evento `video.failed` |
+| Notificação em caso de erro | ✅ | Log + e-mail (`EmailNotificationService` / MailHog :8025) + `errorMessage` na API |
 | Persistência de dados | ✅ | PostgreSQL com entidades `users` e `video_jobs` |
 | Arquitetura escalável | ✅ | API e processor desacoplados; fila absorve picos |
 | Versionamento no GitHub | ✅ | Dois repositórios públicos com GitFlow |
@@ -113,8 +116,8 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 
 | Serviço | Cobertura de instruções | Testes |
 |---|---|---|
-| fiapx-api-service | **60,0%** | Unitários (controller, service, security) + `@SpringBootTest` |
-| fiapx-processor-service | **53,8%** | Unitários (listener, ZIP, processing) + `@SpringBootTest` |
+| fiapx-api-service | **60,0%** | Unitários (controller, service, security) + `@SpringBootTest` — **8 testes** |
+| fiapx-processor-service | **53,8%** | Unitários (listener, ZIP, processing) + `@SpringBootTest` — **4 testes** |
 
 > Cobertura medida com `./mvnw -Pci clean verify`. Camadas de integração (RabbitMQ listeners, FFmpeg real) concentram código ainda não coberto por testes unitários.
 
@@ -163,7 +166,8 @@ docker compose up -d --build
 | Processor (health) | http://localhost:8081/actuator/health |
 | RabbitMQ Management | http://localhost:15672 (guest/guest) |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000 (admin/admin) |
+| Grafana | http://localhost:3000 (admin/admin) — dashboard **FIAP X — Visão geral** |
+| MailHog (e-mail de falha) | http://localhost:8025 |
 
 **Credenciais da API:** `fiapx` / `fiapx123`
 
@@ -218,15 +222,20 @@ O workflow `enforce-gitflow.yml` **bloqueia** PR de `feature/*` direto para `mai
 
 **Link:** *(inserir URL YouTube/Vimeo antes do envio no portal)*
 
-Roteiro sugerido:
-1. `docker compose up -d --build` — stack completa no ar
-2. Swagger UI — autenticação Basic Auth
-3. Upload de vídeo → job `QUEUED` → `PROCESSING` → `COMPLETED`
-4. RabbitMQ Management — fila e exchange `fiapx.events`
-5. Download do ZIP com frames extraídos
-6. `./scripts/e2e-test.sh` — validação automatizada
-7. GitHub Actions — CI verde nos dois repositórios
-8. Prometheus/Grafana — métricas dos serviços
+Roteiro sugerido (alinhado ao PDF — documentação, arquitetura, projeto funcionando):
+
+1. **Documentação** — abrir `docs/fase5/matriz-conformidade.md` e `docs/fase5/arquitetura.md`
+2. **Arquitetura** — diagrama microsserviços + RabbitMQ + PostgreSQL + Redis
+3. **`docker compose up -d --build`** — stack completa no ar
+4. **Autenticação** — Swagger UI com HTTP Basic Auth (`fiapx` / `fiapx123`)
+5. **Upload de 2 vídeos** — jobs `QUEUED` → `PROCESSING` → `COMPLETED`
+6. **Listagem** — `GET /api/videos` mostrando status por usuário
+7. **RabbitMQ Management** (:15672) — filas duráveis e exchange `fiapx.events`
+8. **Download** — ZIP com frames extraídos (funcionalidade do projeto base)
+9. **Notificação de erro** — simular falha (vídeo inválido) e mostrar MailHog :8025
+10. **CI** — GitHub Actions verde nos dois repositórios
+11. **Observabilidade** — Prometheus (:9090) e Grafana dashboard provisionado
+12. **E2E** — `./scripts/e2e-test.sh`
 
 ---
 
