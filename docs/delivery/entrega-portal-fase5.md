@@ -108,7 +108,7 @@ Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz
 | Docker Compose funcional | Conforme | `docker compose up -d --build` |
 | Teste E2E (fluxo feliz) | Conforme | `./scripts/e2e-test.sh` |
 | Verificação ampliada (paralelo, falha, mail, métricas) | **Parcial** | `./scripts/verify-conformidade.sh` — local; não no GitHub até push |
-| Vídeo de apresentação (≤ 10 min) | **Pendente** | Obrigatório no PDF; ainda não gravado/enviado |
+| Vídeo de apresentação (≤ 10 min) | **Conforme** | `fiapx-fase5-demo.mp4` incluído no `fase5.zip` (~4m46s, sem áudio) |
 | Evolução do projeto base FIAP | **Parcial** | Reimplementação equivalente, não fork do repo base |
 
 ---
