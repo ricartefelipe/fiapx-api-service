@@ -67,7 +67,7 @@ Legenda de status:
 | E-01 | Documentação da arquitetura proposta | Conforme | `docs/fase5/arquitetura.md` + `docs/delivery/entrega-portal-fase5.md` | — |
 | E-02 | Script de criação do banco ou outros recursos | Conforme | Liquibase `changelog-master.yaml`; `scripts/db/seed-demo-user.sql` | Liquibase executa no startup |
 | E-03 | Link do GitHub do(s) projeto(s) | Conforme | Repositórios listados na entrega | — |
-| E-04 | Vídeo ≤ 10 min (documentação, arquitetura, projeto funcionando) | **Parcial** | `docs/delivery/fiapx-fase5-demo.mp4` (~4m46s, sem áudio) | Enviar MP4 ou link no portal |
+| E-04 | Vídeo ≤ 10 min (documentação, arquitetura, projeto funcionando) | **Conforme** | `fiapx-fase5-demo.mp4` no `fase5.zip` (~4m46s, sem áudio) | — |
 
 ---
 
