@@ -81,7 +81,7 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 | Cache | Redis (listagem de jobs por usuário, TTL 5 min) |
 | Processamento de vídeo | FFmpeg (via ProcessBuilder no processor) |
 | Documentação API | SpringDoc OpenAPI / Swagger UI |
-| Testes | JUnit 5 + Mockito + Testcontainers |
+| Testes | JUnit 5 + Mockito |
 | Cobertura | JaCoCo |
 | CI/CD | GitHub Actions |
 | Containers | Docker + Docker Compose |
@@ -93,20 +93,23 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 
 Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz-conformidade.md`](../fase5/matriz-conformidade.md)
 
-| Requisito | Status | Evidência |
+| Requisito | Status | Evidência / gap |
 |---|---|---|
-| Processar mais de um vídeo simultaneamente | ✅ | Fila RabbitMQ + worker assíncrono; múltiplos jobs em paralelo |
-| Não perder requisições em picos de carga | ✅ | Filas duráveis no RabbitMQ; API retorna 202 Accepted |
-| Proteção por usuário e senha | ✅ | HTTP Basic Auth (`fiapx` / `fiapx123` demo) |
-| Listagem de status dos vídeos por usuário | ✅ | `GET /api/videos` e `GET /api/videos/{id}` |
-| Notificação em caso de erro | ✅ | Log + e-mail (`EmailNotificationService` / MailHog :8025) + `errorMessage` na API |
-| Persistência de dados | ✅ | PostgreSQL com entidades `users` e `video_jobs` |
-| Arquitetura escalável | ✅ | API e processor desacoplados; fila absorve picos |
-| Versionamento no GitHub | ✅ | Dois repositórios públicos com GitFlow |
-| Testes automatizados | ✅ | `./mvnw -Pci clean verify` em ambos os serviços |
-| CI/CD | ✅ | GitHub Actions com build, testes e push Docker (GHCR) |
-| Docker Compose funcional | ✅ | `docker compose up -d --build` |
-| Teste E2E | ✅ | `./scripts/e2e-test.sh` (upload → COMPLETED → download ZIP) |
+| Processar mais de um vídeo simultaneamente | **Parcial** | Fila + worker assíncrono configurados; teste paralelo só em `scripts/verify-conformidade.sh` (local) |
+| Não perder requisições em picos de carga | Conforme | Filas duráveis; API retorna 202 Accepted |
+| Proteção por usuário e senha | Conforme | HTTP Basic Auth (`fiapx` / `fiapx123`) |
+| Listagem de status dos vídeos por usuário | Conforme | `GET /api/videos` e `GET /api/videos/{id}` |
+| Notificação em caso de erro | **Parcial** | Código + MailHog; **GitHub `main` ainda com `spring.mail` quebrado** até push |
+| Persistência de dados | Conforme | PostgreSQL (`users`, `video_jobs`) |
+| Arquitetura escalável | Conforme | API e processor desacoplados via fila |
+| Versionamento no GitHub | Conforme | Dois repositórios com GitFlow |
+| Testes automatizados | **Parcial** | `./mvnw -Pci clean verify`; JaCoCo ~54%; sem Testcontainers/RabbitMQ real |
+| CI/CD | **Parcial** | CI (build, testes, imagem GHCR); **sem pipeline de deploy** |
+| Docker Compose funcional | Conforme | `docker compose up -d --build` |
+| Teste E2E (fluxo feliz) | Conforme | `./scripts/e2e-test.sh` |
+| Verificação ampliada (paralelo, falha, mail, métricas) | **Parcial** | `./scripts/verify-conformidade.sh` — local; não no GitHub até push |
+| Vídeo de apresentação (≤ 10 min) | **Pendente** | Obrigatório no PDF; ainda não gravado/enviado |
+| Evolução do projeto base FIAP | **Parcial** | Reimplementação equivalente, não fork do repo base |
 
 ---
 
@@ -116,10 +119,10 @@ Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz
 
 | Serviço | Cobertura de instruções | Testes |
 |---|---|---|
-| fiapx-api-service | **53,6%** | Unitários (controller, service, security) + `@SpringBootTest` — **8 testes** |
+| fiapx-api-service | **53,6%** | Unitários (controller, service, security) + `@SpringBootTest` com H2 — **8 testes** |
 | fiapx-processor-service | **56,2%** | Unitários (listener, ZIP, processing) + `@SpringBootTest` — **4 testes** |
 
-> Cobertura medida com `./mvnw -Pci clean verify`. Camadas de integração (RabbitMQ listeners, FFmpeg real) concentram código ainda não coberto por testes unitários.
+> Cobertura medida com `./mvnw -Pci clean verify`. Testes usam H2 e mocks (sem Testcontainers). Camadas de integração (RabbitMQ listeners, FFmpeg real) concentram código ainda não coberto por testes unitários.
 
 ### 5.2 CI/CD — GitHub Actions
 
@@ -171,7 +174,7 @@ docker compose up -d --build
 
 **Credenciais da API:** `fiapx` / `fiapx123`
 
-### 6.3 Teste E2E automatizado
+### 6.3 Teste E2E automatizado (fluxo feliz)
 
 ```bash
 cd fiapx-api-service
@@ -181,7 +184,17 @@ chmod +x scripts/e2e-test.sh
 
 O script aguarda a API, envia upload, poll até `COMPLETED` e valida o download do ZIP.
 
-### 6.4 Testes unitários
+### 6.4 Verificação de conformidade ampliada
+
+```bash
+cd fiapx-api-service
+chmod +x scripts/verify-conformidade.sh
+./scripts/verify-conformidade.sh
+```
+
+Valida: health da API (8080) e processor (8081), dois uploads paralelos, falha com arquivo inválido + e-mail no MailHog, targets Prometheus UP.
+
+### 6.5 Testes unitários
 
 ```bash
 ./mvnw -Pci clean verify   # em cada repositório
@@ -216,30 +229,7 @@ O workflow `enforce-gitflow.yml` **bloqueia** PR de `feature/*` direto para `mai
 
 ---
 
-## 9. Vídeo demonstrativo (≤ 10 minutos)
-
-**Status:** **PENDENTE** — o aluno envia o link separadamente no portal.
-
-**Link:** *(inserir URL YouTube/Vimeo antes do envio no portal)*
-
-Roteiro sugerido (alinhado ao PDF — documentação, arquitetura, projeto funcionando):
-
-1. **Documentação** — abrir `docs/fase5/matriz-conformidade.md` e `docs/fase5/arquitetura.md`
-2. **Arquitetura** — diagrama microsserviços + RabbitMQ + PostgreSQL + Redis
-3. **`docker compose up -d --build`** — stack completa no ar
-4. **Autenticação** — Swagger UI com HTTP Basic Auth (`fiapx` / `fiapx123`)
-5. **Upload de 2 vídeos** — jobs `QUEUED` → `PROCESSING` → `COMPLETED`
-6. **Listagem** — `GET /api/videos` mostrando status por usuário
-7. **RabbitMQ Management** (:15672) — filas duráveis e exchange `fiapx.events`
-8. **Download** — ZIP com frames extraídos (funcionalidade do projeto base)
-9. **Notificação de erro** — simular falha (vídeo inválido) e mostrar MailHog :8025
-10. **CI** — GitHub Actions verde nos dois repositórios
-11. **Observabilidade** — Prometheus (:9090) e Grafana dashboard provisionado
-12. **E2E** — `./scripts/e2e-test.sh`
-
----
-
-## 10. Pacote zipado (portal)
+## 9. Pacote zipado (portal)
 
 Arquivo **`fase5-microsservicos.zip`** enviado no portal contém:
 - Código-fonte de `fiapx-api-service` (sem `target/`, sem `.git/`)
