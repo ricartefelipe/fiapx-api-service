@@ -229,7 +229,25 @@ O workflow `enforce-gitflow.yml` **bloqueia** PR de `feature/*` direto para `mai
 
 ---
 
-## 9. Pacote zipado (portal)
+## 9. Vídeo demonstrativo (≤ 10 minutos, sem áudio)
+
+**Arquivo local:** `docs/delivery/fiapx-fase5-demo.mp4` (~4 min 46 s, mudo)
+
+**Como regenerar:**
+
+```bash
+docker compose up -d --build
+python3 scripts/capture-demo-frames.py
+SECONDS_PER_FRAME=22 ./scripts/generate-demo-video.sh
+```
+
+Conteúdo: arquitetura, capturas de Swagger/RabbitMQ/MailHog/Grafana/Prometheus, upload, processamento, erro + e-mail, testes e GitHub.
+
+**Portal:** enviar o MP4 ou publicar no YouTube/Vimeo e colar o link no campo do aluno.
+
+---
+
+## 10. Pacote zipado (portal)
 
 Arquivo **`fase5-microsservicos.zip`** enviado no portal contém:
 - Código-fonte de `fiapx-api-service` (sem `target/`, sem `.git/`)
