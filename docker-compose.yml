@@ -85,6 +85,8 @@ services:
     build:
       context: ../fiapx-processor-service
       dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672

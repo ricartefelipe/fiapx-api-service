@@ -36,7 +36,7 @@ docker compose ps
 
 Credenciais da API: `fiapx` / `fiapx123`
 
-### Teste E2E automatizado
+### Teste E2E automatizado (fluxo feliz)
 
 ```bash
 chmod +x scripts/e2e-test.sh
@@ -44,6 +44,23 @@ chmod +x scripts/e2e-test.sh
 ```
 
 O script gera um vídeo curto com ffmpeg (se necessário), envia upload, aguarda `COMPLETED` e valida o download do ZIP.
+
+### Verificação de conformidade ampliada
+
+Requer stack Docker Compose em execução (`docker compose up -d --build`).
+
+```bash
+chmod +x scripts/verify-conformidade.sh
+./scripts/verify-conformidade.sh
+```
+
+| Verificação | Endpoint / evidência |
+|-------------|------------------------|
+| Health API | http://localhost:8080/api/actuator/health |
+| Health Processor | http://localhost:8081/actuator/health |
+| Upload paralelo (2 jobs) | `POST /api/videos` × 2 em paralelo |
+| Falha + e-mail | arquivo inválido → MailHog http://localhost:8025 |
+| Prometheus targets | http://localhost:9090/targets (fiapx-api, fiapx-processor UP) |
 
 ### Teste E2E manual
 
@@ -95,12 +112,14 @@ cd fiapx-api-service
 ./mvnw spring-boot:run
 ```
 
-### 4. Iniciar processor
+### 4. Iniciar processor (porta 8081)
 
 ```bash
 cd fiapx-processor-service
 ./mvnw spring-boot:run
 ```
+
+Health local: http://localhost:8081/actuator/health
 
 ## Fluxo de eventos
 
