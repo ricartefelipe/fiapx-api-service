@@ -26,7 +26,7 @@
 
 | Camada | Tecnologia |
 |--------|------------|
-| Containers | Docker + Docker Compose (K8s futuro) |
+| Containers | Docker + Docker Compose |
 | Mensageria | RabbitMQ |
 | Banco | PostgreSQL + Redis |
 | Monitoramento | Prometheus + Grafana |
@@ -47,7 +47,7 @@
 ## Fluxo de processamento
 
 ```
-Cliente → POST /v1/videos (upload)
+Cliente → POST /api/videos (upload)
           API Service → persiste VideoJob (PENDING)
                       → publica video.requested (RabbitMQ)
                       → retorna jobId
@@ -67,28 +67,21 @@ API Service → consome video.completed/failed
 ## Entregáveis
 
 ### Documentação
-- [ ] Documentação da arquitetura (`docs/fase5/arquitetura.md`)
-- [ ] Script de criação do banco (Liquibase + `scripts/db/`)
+- [x] Documentação da arquitetura (`docs/fase5/arquitetura.md`)
+- [x] Script de criação do banco (Liquibase + `scripts/db/`)
 
 ### Código
 - [x] Repositórios GitHub criados
-- [ ] Upload multipart funcional
-- [ ] Processamento real com FFmpeg/JavaCV
-- [ ] Notificação por e-mail
-- [ ] Testes com cobertura mínima
-- [ ] CI verde
-
-### Apresentação
-- [ ] Vídeo de até 10 minutos (arquitetura + demo)
+- [x] Upload multipart funcional
+- [x] Processamento real com FFmpeg
+- [x] Notificação por e-mail (MailHog via Docker Compose)
+- [x] Testes com cobertura mínima (H2 + Mockito; Testcontainers no pom sem uso)
+- [x] CI verde
 
 ---
 
-## Próximas tarefas
+## Backlog (fora do escopo desta entrega)
 
-1. Implementar endpoint POST upload com MultipartFile
-2. Integrar FFmpeg no processor-service
-3. Consumer de eventos completed/failed na API
-4. Serviço de notificação (e-mail)
-5. Testes de integração com Testcontainers
-6. Kubernetes manifests
-7. Release develop → main
+1. Testes de integração com Testcontainers (dependência já no pom)
+2. Manifests Kubernetes
+3. Release develop → main (conforme GitFlow)
