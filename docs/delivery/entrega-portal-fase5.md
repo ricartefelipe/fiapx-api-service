@@ -81,8 +81,8 @@ https://github.com/ricartefelipe/fiapx-api-service/tree/main/docs/fase5
 | Cache | Redis (listagem de jobs por usuário, TTL 5 min) |
 | Processamento de vídeo | FFmpeg (via ProcessBuilder no processor) |
 | Documentação API | SpringDoc OpenAPI / Swagger UI |
-| Testes | JUnit 5 + Mockito |
-| Cobertura | JaCoCo |
+| Testes | JUnit 5 + Mockito + Testcontainers (PostgreSQL, RabbitMQ, GreenMail) |
+| Cobertura | JaCoCo (gate ≥70% no CI) |
 | CI/CD | GitHub Actions |
 | Containers | Docker + Docker Compose |
 | Observabilidade | Micrometer + Prometheus + Grafana |
@@ -95,19 +95,19 @@ Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz
 
 | Requisito | Status | Evidência / gap |
 |---|---|---|
-| Processar mais de um vídeo simultaneamente | **Parcial** | Fila + worker assíncrono configurados; teste paralelo só em `scripts/verify-conformidade.sh` (local) |
+| Processar mais de um vídeo simultaneamente | **Conforme** | Fila + worker assíncrono; `scripts/verify-conformidade.sh` (2 uploads paralelos) |
 | Não perder requisições em picos de carga | Conforme | Filas duráveis; API retorna 202 Accepted |
-| Proteção por usuário e senha | Conforme | HTTP Basic Auth (`fiapx` / `fiapx123`) |
+| Proteção por usuário e senha | Conforme | HTTP Basic Auth (`fiapx` / `fiapx123`); testes de 401 e isolamento por usuário |
 | Listagem de status dos vídeos por usuário | Conforme | `GET /api/videos` e `GET /api/videos/{id}` |
-| Notificação em caso de erro | **Parcial** | Código + MailHog; **GitHub `main` ainda com `spring.mail` quebrado** até push |
+| Notificação em caso de erro | **Conforme** | `CompositeNotificationService` + e-mail (MailHog); teste integração GreenMail |
 | Persistência de dados | Conforme | PostgreSQL (`users`, `video_jobs`) |
 | Arquitetura escalável | Conforme | API e processor desacoplados via fila |
 | Versionamento no GitHub | Conforme | Dois repositórios com GitFlow |
-| Testes automatizados | **Parcial** | `./mvnw -Pci clean verify`; JaCoCo ~54%; sem Testcontainers/RabbitMQ real |
+| Testes automatizados | **Conforme** | `./mvnw -Pci clean verify`; 39 testes; Testcontainers; JaCoCo ≥70% (gate CI) |
 | CI/CD | **Parcial** | CI (build, testes, imagem GHCR); **sem pipeline de deploy** |
 | Docker Compose funcional | Conforme | `docker compose up -d --build` |
 | Teste E2E (fluxo feliz) | Conforme | `./scripts/e2e-test.sh` |
-| Verificação ampliada (paralelo, falha, mail, métricas) | **Parcial** | `./scripts/verify-conformidade.sh` — local; não no GitHub até push |
+| Verificação ampliada (paralelo, falha, mail, métricas) | **Conforme** | `./scripts/verify-conformidade.sh` |
 | Vídeo de apresentação (≤ 10 min) | **Conforme** | `fiapx-fase5-demo.mp4` incluído no `fase5.zip` (~4m46s, sem áudio) |
 | Evolução do projeto base FIAP | **Parcial** | Reimplementação equivalente, não fork do repo base |
 
@@ -119,10 +119,10 @@ Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz
 
 | Serviço | Cobertura de instruções | Testes |
 |---|---|---|
-| fiapx-api-service | **53,6%** | Unitários (controller, service, security) + `@SpringBootTest` com H2 — **8 testes** |
-| fiapx-processor-service | **56,2%** | Unitários (listener, ZIP, processing) + `@SpringBootTest` — **4 testes** |
+| fiapx-api-service | **~90%** | Unitários + integração Testcontainers (PostgreSQL, RabbitMQ, GreenMail) — **29 testes** |
+| fiapx-processor-service | **~97%** | Unitários + integração RabbitMQ + FFmpeg simulado — **10 testes** |
 
-> Cobertura medida com `./mvnw -Pci clean verify`. Testes usam H2 e mocks (sem Testcontainers). Camadas de integração (RabbitMQ listeners, FFmpeg real) concentram código ainda não coberto por testes unitários.
+> Cobertura medida com `./mvnw -Pci clean verify`. CI falha se JaCoCo cair abaixo de **70%**. Integração cobre listeners, fluxo de mensagens, segurança HTTP Basic e notificação por e-mail.
 
 ### 5.2 CI/CD — GitHub Actions
 
@@ -142,8 +142,8 @@ Matriz detalhada (requisito × status × evidência × gap): [`docs/fase5/matriz
 | Item | Status |
 |---|---|
 | Propriedades no `pom.xml` | ✅ Configurado (`ricartefelipe_fiapx-api-service`, `ricartefelipe_fiapx-processor-service`) |
-| Análise automática no CI | N/A — token SonarCloud ainda não integrado ao pipeline |
-| Dashboards | N/A — aguardando primeira análise publicada |
+| Análise automática no CI | Conforme — SonarCloud Code Analysis nos PRs |
+| Dashboards | https://sonarcloud.io/project/overview?id=ricartefelipe_fiapx-api-service |
 
 ---
 
@@ -215,7 +215,7 @@ Fluxo documentado em `docs/GITFLOW.md` (ambos os repositórios):
 
 O workflow `enforce-gitflow.yml` **bloqueia** PR de `feature/*` direto para `main`.
 
-**Release entregue:** PR #4 (`develop` → `main`) mergeado com CI verde em 24/07/2026.
+**Última release:** testes de integração e gate JaCoCo — PR #21 (`develop` → `main`), CI verde em 29/08/2026.
 
 ---
 
