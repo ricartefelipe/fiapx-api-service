@@ -8,7 +8,7 @@ Legenda de status:
 - **N/A** — item recomendado, não obrigatório no PDF
 - **Pendente** — depende de ação externa ainda não concluída
 
-> **Estado do repositório remoto (GitHub `main`):** correções de `application.yml` (mail), porta 8081 e script `verify-conformidade.sh` existem **apenas no working tree local** até push. O professor que clona `main` ainda vê mail quebrado sob `springdoc`.
+> **Estado do repositório remoto (GitHub `main`):** API e Processor com testes de integração Testcontainers, gate JaCoCo ≥70% no CI e correções de conformidade mergeadas via GitFlow.
 
 ---
 
@@ -19,7 +19,7 @@ Legenda de status:
 | CTX-01 | Evoluir projeto base que extrai frames de vídeo e gera ZIP | **Parcial** | `fiapx-processor-service` — `FfmpegFrameExtractor`, `ZipArchiveService`, `VideoProcessingService` | Funcionalidade equivalente reimplementada; **não é fork/evolução direta** do projeto base FIAP |
 | CTX-02 | Aplicar desenho de arquitetura | Conforme | `docs/fase5/arquitetura.md`, diagrama Mermaid | — |
 | CTX-03 | Desenvolvimento de microsserviços | Conforme | Dois repositórios: API + Processor | — |
-| CTX-04 | Qualidade de software | Parcial | Testes JUnit, JaCoCo ~54%, CI verde | Cobertura abaixo do ideal; sem integração real RabbitMQ/Postgres nos testes |
+| CTX-04 | Qualidade de software | **Conforme** | Testes unitários + integração (Testcontainers), JaCoCo ≥70%, CI verde | — |
 | CTX-05 | Mensageria | Conforme | RabbitMQ topic exchange `fiapx.events` | — |
 
 ---
@@ -28,11 +28,11 @@ Legenda de status:
 
 | ID | Requisito (PDF) | Status | Evidência | Gap / observação |
 |----|-----------------|--------|-----------|------------------|
-| RF-01 | Processar mais de um vídeo ao mesmo tempo | **Parcial** | Fila `video.processing`; listener `concurrency: 3`, `max-concurrency: 10` em `fiapx-processor-service` | Configuração existe; **falta teste automatizado de paralelismo** no CI (script local `scripts/verify-conformidade.sh` cobre após push) |
+| RF-01 | Processar mais de um vídeo ao mesmo tempo | **Conforme** | Fila `video.processing`; listener `concurrency: 3`, `max-concurrency: 10`; `scripts/verify-conformidade.sh` (2 uploads paralelos) | — |
 | RF-02 | Em picos, o sistema não deve perder requisição | Conforme | Filas duráveis; API retorna `202 Accepted`; persistência antes de publicar evento | — |
-| RF-03 | Sistema protegido por usuário e senha | Conforme | Spring Security HTTP Basic Auth; usuários em PostgreSQL (`users`) | Credenciais demo: `fiapx` / `fiapx123` |
+| RF-03 | Sistema protegido por usuário e senha | **Conforme** | Spring Security HTTP Basic Auth; testes de 401 e isolamento por usuário | Credenciais demo: `fiapx` / `fiapx123` |
 | RF-04 | Listagem de status dos vídeos de um usuário | Conforme | `GET /api/videos` e `GET /api/videos/{id}`; filtro por `userId` autenticado | Status: `QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED` |
-| RF-05 | Em caso de erro, usuário pode ser notificado (e-mail ou outro meio) | **Parcial** (GitHub) / **Conforme** (local pós-fix) | `CompositeNotificationService` + `EmailNotificationService`; MailHog :8025 | **GitHub `main`:** `spring.mail` estava sob `springdoc` → e-mail não dispara. **Local:** corrigido + validado por `scripts/verify-conformidade.sh` |
+| RF-05 | Em caso de erro, usuário pode ser notificado (e-mail ou outro meio) | **Conforme** | `CompositeNotificationService` + `EmailNotificationService`; MailHog :8025; teste integração com GreenMail | — |
 
 ---
 
@@ -43,7 +43,7 @@ Legenda de status:
 | RT-01 | Persistir os dados | Conforme | PostgreSQL + JPA + Liquibase | Tabelas `users`, `video_jobs` |
 | RT-02 | Arquitetura escalável | Conforme | API stateless; processor horizontal via fila; `arquitetura.md` § Escalabilidade | Docker Compose local; K8s não exigido |
 | RT-03 | Versionado no GitHub | Conforme | https://github.com/ricartefelipe/fiapx-api-service e https://github.com/ricartefelipe/fiapx-processor-service | GitFlow documentado |
-| RT-04 | Testes que garantem qualidade | **Parcial** | `./mvnw -Pci clean verify` — 8 testes API, 4 testes Processor | JaCoCo **~54% API, ~56% Processor**; testes usam H2/Mockito — **sem integração RabbitMQ/Postgres real** |
+| RT-04 | Testes que garantem qualidade | **Conforme** | `./mvnw -Pci clean verify` — 29 testes API, 10 testes Processor; Testcontainers (PostgreSQL + RabbitMQ); gate JaCoCo ≥70% | — |
 | RT-05 | CI/CD da aplicação | **Parcial** | `.github/workflows/ci.yml` — build, testes, push GHCR | **CI sim; CD/deploy em ambiente alvo não implementado** |
 
 ---
@@ -55,7 +55,7 @@ Legenda de status:
 | ST-01 | Docker + Kubernetes ou Docker Compose | Conforme | `docker-compose.yml` sobe stack completa | K8s: N/A (Compose atende) |
 | ST-02 | RabbitMQ, Kafka ou similar | Conforme | RabbitMQ 4 + Spring AMQP | — |
 | ST-03 | PostgreSQL + Redis (cache) | Conforme | PostgreSQL + Redis cache em `VideoJobService.listJobs` | — |
-| ST-04 | Prometheus + Grafana, ELK ou similar | **Parcial** | Prometheus scrape + Grafana provisionado | Dashboard **pode aparecer vazio** sem tráfego/métricas acumuladas; ELK: N/A |
+| ST-04 | Prometheus + Grafana, ELK ou similar | **Conforme** | Prometheus scrape + Grafana provisionado; `scripts/verify-conformidade.sh` valida targets UP | ELK: N/A |
 | ST-05 | GitHub Actions ou similar | Conforme | Workflows CI em ambos repositórios | — |
 
 ---
@@ -93,26 +93,24 @@ Pré-requisito: `docker compose up -d --build` com stack healthy.
 
 ---
 
-## 8. Itens fora do escopo do PDF (não inventar requisitos)
+## 8. Cobertura de testes automatizados
+
+| Repositório | Testes | Integração | JaCoCo (instruções) |
+|-------------|--------|------------|---------------------|
+| `fiapx-api-service` | 29 | PostgreSQL + RabbitMQ + GreenMail (e-mail) | ≥70% (gate no CI) |
+| `fiapx-processor-service` | 10 | RabbitMQ + script FFmpeg simulado | ≥70% (gate no CI) |
+
+Classes cobertas por integração: `VideoStatusListener`, `VideoEventPublisher`, fluxo `video.requested` → `processing` → `completed`/`failed`, segurança HTTP Basic, notificação por e-mail.
+
+---
+
+## 9. Itens fora do escopo do PDF (não inventar requisitos)
 
 - Kubernetes em produção (sem manifests no repositório)
-- Testcontainers nos testes (dependência no `pom.xml` sem uso efetivo; testes usam H2/Mockito)
 - SonarCloud com token no CI (propriedades existem; análise automática opcional)
 - JWT/OAuth (PDF exige apenas usuário e senha)
 - Frontend web dedicado (cliente HTTP: curl, Swagger UI, Postman)
 
 ---
 
-## 9. Correções aplicadas (auditoria 11/08/2026 — local, aguardando push)
-
-| Correção | Motivo |
-|----------|--------|
-| `spring.mail` sob `spring:` em `application.yml` | Bloco estava sob `springdoc`; `EmailNotificationService` exige `spring.mail.host` |
-| `micrometer-registry-prometheus` nos dois `pom.xml` | Já presente; endpoint `/actuator/prometheus` depende do registry |
-| Porta `8081:8081` no `docker-compose.yml` | Docs citavam `localhost:8081` mas processor não tinha mapeamento no remoto |
-| `scripts/verify-conformidade.sh` | Evidência automatizada para RF-01, RF-05 e ST-04 |
-| Matriz e entrega reescritas | Status honestos; removidas alegações "tudo ✅" |
-
----
-
-*Última revisão: 11/08/2026 — working tree local (não reflete GitHub `main` até commit/push)*
+*Última revisão: 29/08/2026 — branch `feature/testes-integracao-qualidade`*
