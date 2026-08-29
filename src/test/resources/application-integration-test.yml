@@ -1,0 +1,31 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  liquibase:
+    enabled: true
+  mail:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  rabbitmq:
+    exchange: fiapx.events
+    routing-key-video-requested: video.requested
+    routing-key-video-processing: video.processing
+    routing-key-video-completed: video.completed
+    routing-key-video-failed: video.failed
+    queue-processing: video.api.processing
+    queue-completed: video.api.completed
+    queue-failed: video.api.failed
+  storage:
+    upload-dir: ${java.io.tmpdir}/fiapx-it/uploads
+    output-dir: ${java.io.tmpdir}/fiapx-it/output

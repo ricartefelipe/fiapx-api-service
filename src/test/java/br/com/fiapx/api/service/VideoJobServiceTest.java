@@ -12,6 +12,8 @@ import br.com.fiapx.api.domain.VideoJobStatus;
 import br.com.fiapx.api.messaging.VideoEventPublisher;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,5 +97,52 @@ class VideoJobServiceTest {
 
         assertThat(job.getStatus()).isEqualTo(VideoJobStatus.FAILED);
         verify(notificationService).notifyProcessingFailed(jobId, job.getUserId(), "erro ffmpeg");
+    }
+
+    @Test
+    void markCompletedShouldUpdateOutputPath() {
+        UUID jobId = UUID.randomUUID();
+        VideoJob job = new VideoJob(jobId, UUID.randomUUID(), "video.mp4", VideoJobStatus.PROCESSING, java.time.Instant.now());
+        when(videoJobRepository.findById(jobId)).thenReturn(Optional.of(job));
+
+        VideoJob updated = videoJobService.markCompleted(jobId, "/tmp/output.zip");
+
+        assertThat(updated.getStatus()).isEqualTo(VideoJobStatus.COMPLETED);
+        assertThat(updated.getOutputPath()).isEqualTo("/tmp/output.zip");
+    }
+
+    @Test
+    void getDownloadPathShouldRejectIncompleteJob() {
+        UUID userId = UUID.randomUUID();
+        UUID jobId = UUID.randomUUID();
+        VideoJob job = new VideoJob(jobId, userId, "video.mp4", VideoJobStatus.PROCESSING, java.time.Instant.now());
+        when(videoJobRepository.findByIdAndUserId(jobId, userId)).thenReturn(Optional.of(job));
+
+        assertThatThrownBy(() -> videoJobService.getDownloadPath(userId, jobId))
+            .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void getDownloadPathShouldReturnExistingZip(@TempDir Path tempDir) throws IOException {
+        UUID userId = UUID.randomUUID();
+        UUID jobId = UUID.randomUUID();
+        Path zipPath = tempDir.resolve("output.zip");
+        Files.writeString(zipPath, "zip");
+        VideoJob job = new VideoJob(jobId, userId, "video.mp4", VideoJobStatus.COMPLETED, java.time.Instant.now());
+        job.markCompleted(zipPath.toString(), java.time.Instant.now());
+        when(videoJobRepository.findByIdAndUserId(jobId, userId)).thenReturn(Optional.of(job));
+        when(videoStorageService.resolveOutputPath(zipPath.toString())).thenReturn(zipPath);
+
+        Path result = videoJobService.getDownloadPath(userId, jobId);
+
+        assertThat(result).isEqualTo(zipPath);
+    }
+
+    @Test
+    void createJobShouldRejectEmptyFile() {
+        MockMultipartFile file = new MockMultipartFile("file", "clip.mp4", "video/mp4", new byte[0]);
+
+        assertThatThrownBy(() -> videoJobService.createJob(UUID.randomUUID(), file))
+            .isInstanceOf(ResponseStatusException.class);
     }
 }

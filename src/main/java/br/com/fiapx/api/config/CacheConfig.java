@@ -14,7 +14,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableCaching
-@Profile("!test")
+@Profile("!test & !integration-test")
 public class CacheConfig {
 
     @Bean
