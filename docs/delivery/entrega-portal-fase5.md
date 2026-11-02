@@ -249,12 +249,16 @@ Conteúdo: arquitetura, capturas de Swagger/RabbitMQ/MailHog/Grafana/Prometheus,
 
 ## 10. Pacote zipado (portal)
 
-Arquivo **`fase5-microsservicos.zip`** enviado no portal contém:
-- Código-fonte de `fiapx-api-service` (sem `target/`, sem `.git/`)
-- Código-fonte de `fiapx-processor-service` (sem `target/`, sem `.git/`)
-- Este PDF (`entrega-portal-fase5.pdf`)
+Um único arquivo **`fase5.zip`** para upload no painel (não versionado no Git). Conteúdo na raiz do zip:
 
-Arquivo **`fase5.zip`** contém a pasta `fase5/` com o PDF e o ZIP de código.
+| Item | Conteúdo |
+|------|----------|
+| `entrega-portal-fase5.pdf` | Documentação + arquitetura + checklist |
+| `fiapx-fase5-demo.mp4` | Vídeo demo (~4m46s, sem áudio) |
+| `fiapx-api-service/` | Código-fonte do microsserviço API |
+| `fiapx-processor-service/` | Código-fonte do microsserviço Processor |
+
+Regenerar localmente: `./scripts/build-fase5-delivery.sh` (valida PDF, vídeo e código antes de concluir).
 
 ---
 
