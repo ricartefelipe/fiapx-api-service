@@ -7,6 +7,24 @@ WORK="$(mktemp -d)"
 PARENT="$(dirname "$ROOT")"
 API_SRC="$ROOT"
 PROCESSOR_SRC="$PARENT/fiapx-processor-service"
+OUTPUT="$DELIVERY/fase5.zip"
+
+RSYNC_EXCLUDES=(
+  --exclude '.git'
+  --exclude 'target'
+  --exclude '.idea'
+  --exclude '.vscode'
+)
+
+API_EXCLUDES=(
+  "${RSYNC_EXCLUDES[@]}"
+  --exclude 'docs/delivery/video-frames'
+  --exclude 'docs/delivery/fase5'
+  --exclude 'docs/delivery/fase5.zip'
+  --exclude 'docs/delivery/fase5-microsservicos.zip'
+  --exclude 'docs/delivery/fiapx-api-service.zip'
+  --exclude 'docs/delivery/fiapx-processor-service.zip'
+)
 
 cleanup() {
   rm -rf "$WORK"
@@ -18,64 +36,49 @@ if [[ ! -d "$PROCESSOR_SRC" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$DELIVERY/fiapx-fase5-demo.mp4" ]]; then
+  echo "ERRO: vídeo obrigatório ausente: $DELIVERY/fiapx-fase5-demo.mp4" >&2
+  exit 1
+fi
+
+if [[ ! -f "$DELIVERY/entrega-portal-fase5.md" ]]; then
+  echo "ERRO: markdown de entrega ausente: $DELIVERY/entrega-portal-fase5.md" >&2
+  exit 1
+fi
+
 echo ">> Gerando PDF..."
 (
   cd "$DELIVERY"
   npx --yes md-to-pdf entrega-portal-fase5.md --stylesheet pdf-print.css
 )
 
-if [[ ! -f "$DELIVERY/fiapx-fase5-demo.mp4" ]]; then
-  echo "Vídeo demo ausente: $DELIVERY/fiapx-fase5-demo.mp4" >&2
-  exit 1
-fi
+echo ">> Montando fase5.zip (PDF + vídeo + código dos dois microsserviços)..."
+PACK="$WORK/portal-pack"
+mkdir -p "$PACK/fiapx-api-service" "$PACK/fiapx-processor-service"
 
-echo ">> Empacotando código dos microsserviços..."
-STAGE="$WORK/fiapx-bundle"
-mkdir -p "$STAGE"
+rsync -a --delete "${API_EXCLUDES[@]}" "$API_SRC/" "$PACK/fiapx-api-service/"
+rsync -a --delete "${RSYNC_EXCLUDES[@]}" "$PROCESSOR_SRC/" "$PACK/fiapx-processor-service/"
 
-rsync -a --delete \
-  --exclude '.git' \
-  --exclude 'target' \
-  --exclude '.idea' \
-  --exclude '.vscode' \
-  --exclude 'docs/delivery/video-frames' \
-  --exclude 'docs/delivery/fase5' \
-  --exclude 'docs/delivery/fase5 (2)' \
-  --exclude 'docs/delivery/fase5.zip' \
-  --exclude 'docs/delivery/fase5-microsservicos.zip' \
-  --exclude 'docs/delivery/fiapx-fase5-demo.mp4' \
-  --exclude 'docs/delivery/entrega-portal-fase5.pdf' \
-  "$API_SRC/" "$STAGE/fiapx-api-service/"
+cp "$DELIVERY/entrega-portal-fase5.pdf" "$DELIVERY/fiapx-fase5-demo.mp4" "$PACK/"
 
-rsync -a --delete \
-  --exclude '.git' \
-  --exclude 'target' \
-  --exclude '.idea' \
-  --exclude '.vscode' \
-  "$PROCESSOR_SRC/" "$STAGE/fiapx-processor-service/"
-
-cp "$DELIVERY/entrega-portal-fase5.pdf" "$STAGE/"
-
+rm -f "$OUTPUT"
 (
-  cd "$STAGE"
-  zip -qr "$DELIVERY/fase5-microsservicos.zip" fiapx-api-service fiapx-processor-service entrega-portal-fase5.pdf
+  cd "$PACK"
+  zip -qr "$OUTPUT" .
 )
 
-echo ">> Montando fase5.zip..."
-FASE5_DIR="$WORK/fase5-pack"
-mkdir -p "$FASE5_DIR/fase5"
-cp "$DELIVERY/entrega-portal-fase5.pdf" "$DELIVERY/fiapx-fase5-demo.mp4" "$DELIVERY/fase5-microsservicos.zip" "$FASE5_DIR/fase5/"
-cp "$DELIVERY/entrega-portal-fase5.pdf" "$DELIVERY/fiapx-fase5-demo.mp4" "$DELIVERY/fase5-microsservicos.zip" "$FASE5_DIR/"
+echo ">> Validando pacote do portal..."
+LIST=$(unzip -l "$OUTPUT")
+echo "$LIST" | rg -q "entrega-portal-fase5.pdf" || { echo "ERRO: PDF ausente no fase5.zip"; exit 1; }
+echo "$LIST" | rg -q "fiapx-fase5-demo.mp4" || { echo "ERRO: vídeo ausente no fase5.zip"; exit 1; }
+echo "$LIST" | rg -q "VideoStatusListenerIntegrationTest" || { echo "ERRO: código desatualizado no pacote"; exit 1; }
+echo "$LIST" | rg -q "fiapx-processor-service/" || { echo "ERRO: processor ausente no pacote"; exit 1; }
 
-(
-  cd "$FASE5_DIR"
-  zip -qr "$DELIVERY/fase5.zip" .
-)
+rm -f "$DELIVERY/fase5-microsservicos.zip" "$DELIVERY/fiapx-api-service.zip" "$DELIVERY/fiapx-processor-service.zip"
+rm -rf "$DELIVERY/fase5"
 
-mkdir -p "$DELIVERY/fase5"
-cp "$DELIVERY/entrega-portal-fase5.pdf" "$DELIVERY/fiapx-fase5-demo.mp4" "$DELIVERY/fase5-microsservicos.zip" "$DELIVERY/fase5/"
-
-echo ">> Verificando conteúdo..."
-unzip -l "$DELIVERY/fase5-microsservicos.zip" | rg "VideoStatusListenerIntegrationTest|matriz-conformidade|fake-ffmpeg" | head -5
-ls -lh "$DELIVERY/fase5.zip" "$DELIVERY/fase5-microsservicos.zip" "$DELIVERY/entrega-portal-fase5.pdf"
-echo "OK: pacote de entrega regenerado em $DELIVERY"
+echo ">> Conteúdo final:"
+unzip -l "$OUTPUT" | sed -n '1,35p'
+ls -lh "$OUTPUT" "$DELIVERY/entrega-portal-fase5.pdf" "$DELIVERY/fiapx-fase5-demo.mp4"
+echo ""
+echo "OK: $OUTPUT pronto para upload no portal (não versionar no git)"
